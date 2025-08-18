@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>Chess Game</title>
-  <link rel="stylesheet" href="css/chessboard-1.0.0.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
   <style>
     body {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      margin: 0;
       background: #1e1e2e;
     }
     #board {
@@ -20,8 +21,11 @@
 <body>
   <div id="board"></div>
 
+  <!-- Chess engine -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js"></script>
-  <script src="js/chessboard-1.0.0.min.js"></script>
+  <!-- Chessboard UI -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+
   <script>
     const board = Chessboard('board', {
       draggable: true,
