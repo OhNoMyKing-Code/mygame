@@ -1,320 +1,35 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ChessOnline — Game Cờ Vua by Đỗ Trọng Khanh và Mai Minh Khánh</title>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <meta charset="UTF-8">
+  <title>Chess Game</title>
+  <link rel="stylesheet" href="css/chessboard-1.0.0.min.css">
   <style>
-    :root {
-      --light: #f0d9b5;
-      --dark: #b58863;
-      --accent: #4f46e5;
-      --bg: #0f172a;
-      --panel: #111827;
-      --text: #e5e7eb;
-    }
-    * { box-sizing: border-box; }
     body {
-      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      background: linear-gradient(135deg, #0b1020 0%, #0f172a 40%, #111827 100%);
-      color: var(--text);
-      min-height: 100dvh; display: grid; place-items: center; padding: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #1e1e2e;
     }
-    .app { width: min(1200px, 100%); display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
-    @media (max-width: 950px) { .app { grid-template-columns: 1fr; } }
-
-    .card { background: rgba(17,24,39,.75); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.06); border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
-    .board-wrap { aspect-ratio: 1/1; padding: 12px; }
-
-    .board { width: 100%; height: 100%; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); border-radius: 12px; overflow: hidden; position: relative; }
-    .square { display: grid; place-items: center; font-size: clamp(20px, 6.2vmin, 54px); user-select: none; cursor: pointer; position: relative; }
-    .square.light { background: var(--light); }
-    .square.dark  { background: var(--dark); }
-
-    /* Coordinates */
-    .square::after { content: attr(data-label); position: absolute; left: 6px; bottom: 3px; font-size: 10px; color: rgba(0,0,0,.55); }
-    .dark::after { color: rgba(255,255,255,.7); }
-
-    /* Highlights */
-    .highlight-move { outline: 3px solid rgba(79,70,229,.85); outline-offset: -3px; }
-    .hint::before { content:""; width: 18px; height: 18px; border-radius: 50%; background: rgba(17,24,39,.22); box-shadow: 0 0 0 5px rgba(79,70,229,.55) inset; }
-    .capture::before { content:""; width: 26px; height: 26px; border-radius: 50%; border: 4px solid rgba(79,70,229,.85); background: transparent; }
-
-    .panel { padding: 16px 18px; display: grid; gap: 14px; }
-    .title { font-weight: 700; font-size: 22px; letter-spacing: .3px; }
-    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    button, select, input[type="number"] {
-      background: #1f2937; color: var(--text); border: 1px solid rgba(255,255,255,.08); padding: 10px 12px; border-radius: 12px; cursor: pointer;
-      transition: transform .06s ease, filter .2s ease; font-weight: 600;
+    #board {
+      width: 500px;
     }
-    button:hover { filter: brightness(1.1); }
-    button:active { transform: translateY(1px); }
-
-    .status { font-size: 14px; color: #cbd5e1; }
-    textarea { width: 100%; min-height: 160px; resize: vertical; background: #0b1220; color: #e5e7eb; padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); }
-    .badge { padding: 4px 8px; border-radius: 999px; font-size: 12px; background: rgba(79,70,229,.2); border: 1px solid rgba(79,70,229,.5); }
   </style>
-  <!-- chess.js for rules engine -->
-  <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.min.js"></script>
 </head>
 <body>
-  <div class="app">
-    <div class="card board-wrap">
-      <div id="board" class="board"></div>
-    </div>
+  <div id="board"></div>
 
-    <div class="card panel">
-      <div class="title">ChessOnline — chơi vs người hoặc Bot</div>
-      <div class="row">
-        <button id="newGame">Ván mới</button>
-        <button id="undoBtn">Đi lại (Undo)</button>
-        <button id="flipBtn">Đổi bên (Flip)</button>
-        <span class="badge" id="turnBadge">Lượt: trắng</span>
-      </div>
-
-      <div class="row">
-        <label class="row" style="gap:8px">
-          <input type="checkbox" id="playBot" /> Chơi với Bot
-        </label>
-        <label class="row" style="gap:8px">
-          Độ khó: <input type="number" id="depth" min="1" max="4" value="2" style="width:64px" />
-        </label>
-      </div>
-
-      <div class="status" id="status">Sẵn sàng!</div>
-      <textarea id="pgn" readonly placeholder="Lịch sử nước đi (PGN)"></textarea>
-      <small style="opacity:.75">Tip: Click quân để xem nước hợp lệ. Click ô đích để đi. Phong cấp tự động thành Hậu (Q).</small>
-    </div>
-  </div>
-
+  <script src="js/chess.js"></script>
+  <script src="js/chessboard-1.0.0.min.js"></script>
   <script>
-    // ====== State ======
-    const boardEl = document.getElementById('board');
-    const statusEl = document.getElementById('status');
-    const pgnEl = document.getElementById('pgn');
-    const badgeEl = document.getElementById('turnBadge');
-    const newBtn = document.getElementById('newGame');
-    const undoBtn = document.getElementById('undoBtn');
-    const flipBtn = document.getElementById('flipBtn');
-    const playBotEl = document.getElementById('playBot');
-    const depthEl = document.getElementById('depth');
-
-    const game = new Chess();
-    let orientation = 'white'; // or 'black'
-    let selected = null;
-    let legalTargets = new Set();
-
-    const PIECES = {
-      'p': '♟', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚',
-      'P': '♙', 'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔'
-    };
-
-    // ====== Rendering ======
-    const files = ['a','b','c','d','e','f','g','h'];
-
-    function squareName(fileIndex, rankIndex) {
-      // rankIndex: 0..7 top->bottom visually; map to chess rank/file per orientation
-      if (orientation === 'white') {
-        const f = files[fileIndex];
-        const r = 8 - rankIndex; // 8..1
-        return f + r;
-      } else {
-        const f = files[7 - fileIndex];
-        const r = rankIndex + 1; // 1..8
-        return f + r;
+    const board = Chessboard('board', {
+      draggable: true,
+      position: 'start',
+      onDrop: (source, target, piece, newPos, oldPos, orientation) => {
+        console.log(`${piece} moved from ${source} to ${target}`);
       }
-    }
-
-    function render() {
-      boardEl.innerHTML = '';
-      for (let r = 0; r < 8; r++) {
-        for (let f = 0; f < 8; f++) {
-          const sq = squareName(f, r);
-          const squareDiv = document.createElement('div');
-          squareDiv.className = 'square ' + (((r + f) % 2 === 0) ? 'light' : 'dark');
-          const label = (f === 0 || r === 7) ? sq : '';
-          squareDiv.dataset.label = label;
-          squareDiv.dataset.square = sq;
-
-          const piece = game.get(sq);
-          if (piece) squareDiv.textContent = PIECES[piece.color === 'w' ? piece.type.toUpperCase() : piece.type];
-
-          // highlight selected piece & legal moves
-          if (selected === sq) squareDiv.classList.add('highlight-move');
-          if (selected && legalTargets.has(sq)) {
-            // show capture ring if a piece stands there
-            squareDiv.classList.add(game.get(sq) ? 'capture' : 'hint');
-          }
-
-          squareDiv.addEventListener('click', () => onSquareClick(sq));
-          boardEl.appendChild(squareDiv);
-        }
-      }
-
-      pgnEl.value = game.pgn({ max_width: 70, newline_char: '\n' });
-      const turnSide = game.turn() === 'w' ? 'trắng' : 'đen';
-      badgeEl.textContent = 'Lượt: ' + turnSide;
-
-      if (game.isGameOver()) {
-        if (game.isCheckmate()) {
-          statusEl.textContent = `Chiếu hết! ${turnSide === 'trắng' ? 'Đen' : 'Trắng'} thắng.`;
-        } else if (game.isDraw()) {
-          statusEl.textContent = 'Hòa (stalemate / dead position / 50-move / repetition).';
-        } else {
-          statusEl.textContent = 'Ván kết thúc.';
-        }
-      } else if (game.inCheck()) {
-        statusEl.textContent = `Đang chiếu (${turnSide}).`;
-      } else {
-        statusEl.textContent = 'Đang chơi…';
-      }
-    }
-
-    function onSquareClick(sq) {
-      const turn = game.turn();
-      const sideChar = turn === 'w' ? 'w' : 'b';
-
-      // If first click: select only if own piece
-      if (!selected) {
-        const piece = game.get(sq);
-        if (!piece || piece.color !== sideChar) return; // ignore empty or enemy
-        selected = sq;
-        legalTargets = new Set(game.moves({ square: sq, verbose: true }).map(m => m.to));
-        render();
-        return;
-      }
-
-      // Second click: if clicking same square => deselect
-      if (selected === sq) {
-        selected = null; legalTargets.clear(); render(); return;
-      }
-
-      // Try make move
-      const move = game.move({ from: selected, to: sq, promotion: 'q' });
-      if (move) {
-        selected = null; legalTargets.clear();
-        render();
-        maybeBotMove();
-      } else {
-        // If clicked friendly piece, switch selection
-        const piece = game.get(sq);
-        if (piece && piece.color === sideChar) {
-          selected = sq;
-          legalTargets = new Set(game.moves({ square: sq, verbose: true }).map(m => m.to));
-          render();
-        }
-      }
-    }
-
-    // ====== Controls ======
-    newBtn.addEventListener('click', () => { game.reset(); selected = null; legalTargets.clear(); render(); if (orientation==='black') botMaybeStart(); });
-    undoBtn.addEventListener('click', () => { game.undo(); game.undo(); selected=null; legalTargets.clear(); render(); });
-    flipBtn.addEventListener('click', () => { orientation = (orientation === 'white') ? 'black' : 'white'; render(); botMaybeStart(); });
-
-    function botMaybeStart() {
-      if (playBotEl.checked && ((orientation === 'black' && game.turn() === 'w') || (orientation === 'white' && game.turn() === 'b'))) {
-        maybeBotMove();
-      }
-    }
-
-    // ====== Simple Engine (minimax + alpha-beta) ======
-    const VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
-
-    function evaluateBoard(chess) {
-      // Positive is good for white
-      let score = 0;
-      const board = chess.board();
-      for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-          const pc = board[r][c];
-          if (!pc) continue;
-          const val = VALUES[pc.type];
-          score += pc.color === 'w' ? val : -val;
-        }
-      }
-      // Small tempo bonus
-      score += (chess.turn() === 'w') ? 10 : -10;
-      return score;
-    }
-
-    function orderMoves(chess, moves) {
-      // Captures first
-      return moves.sort((a,b) => (b.flags.includes('c') - a.flags.includes('c')));
-    }
-
-    function minimax(chess, depth, alpha, beta, isMax) {
-      if (depth === 0 || chess.isGameOver()) {
-        if (chess.isCheckmate()) {
-          return isMax ? -99999 : 99999; // if side to move is mated, bad for it
-        }
-        if (chess.isDraw()) return 0;
-        return evaluateBoard(chess);
-      }
-
-      const moves = orderMoves(chess, chess.moves({ verbose: true }));
-      if (isMax) {
-        let best = -Infinity;
-        for (const m of moves) {
-          chess.move(m);
-          const val = minimax(chess, depth - 1, alpha, beta, false);
-          chess.undo();
-          if (val > best) best = val;
-          if (val > alpha) alpha = val;
-          if (beta <= alpha) break;
-        }
-        return best;
-      } else {
-        let best = Infinity;
-        for (const m of moves) {
-          chess.move(m);
-          const val = minimax(chess, depth - 1, alpha, beta, true);
-          chess.undo();
-          if (val < best) best = val;
-          if (val < beta) beta = val;
-          if (beta <= alpha) break;
-        }
-        return best;
-      }
-    }
-
-    function findBestMove(chess, depth) {
-      const isBotWhite = (orientation === 'black'); // if board flipped, bot plays white
-      const botColor = isBotWhite ? 'w' : 'b';
-      const moves = orderMoves(chess, chess.moves({ verbose: true }));
-      let bestMove = null;
-      let bestScore = -Infinity;
-
-      for (const m of moves) {
-        // only consider moves of the side that is to play (always true) — extra guard
-        if ((chess.turn() === 'w' && botColor !== 'w') || (chess.turn() === 'b' && botColor !== 'b')) break;
-        chess.move(m);
-        const score = minimax(chess, depth - 1, -Infinity, Infinity, false) * (botColor === 'w' ? 1 : -1);
-        chess.undo();
-        if (score > bestScore) { bestScore = score; bestMove = m; }
-      }
-      return bestMove || moves[0] || null;
-    }
-
-    function maybeBotMove() {
-      if (!playBotEl.checked || game.isGameOver()) return;
-      const botIsWhite = (orientation === 'black');
-      const sideToMove = game.turn();
-      const botToMove = botIsWhite ? 'w' : 'b';
-      if (sideToMove !== botToMove) return; // not bot's turn
-
-      statusEl.textContent = 'Bot đang nghĩ…';
-      const depth = Math.max(1, Math.min(4, parseInt(depthEl.value) || 2));
-      // Think in a tiny timeout so UI updates
-      setTimeout(() => {
-        const mv = findBestMove(game, depth);
-        if (mv) game.move(mv);
-        render();
-      }, 50);
-    }
-
-    // ====== Init ======
-    render();
+    });
   </script>
 </body>
 </html>
