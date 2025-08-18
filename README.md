@@ -3,7 +3,7 @@
 Game cờ vua online đơn giản chạy trực tiếp bằng **GitHub Pages**.
 
 ## 🚀 Demo
-👉 [Chơi ngay tại đây](https://<username>.github.io/<repo>/)
+👉 [Chơi ngay tại đây](https://ohnomyking-code.github.io/mygame/)
 
 ## 🕹️ Tính năng
 - Bàn cờ đẹp, hiển thị nước đi hợp lệ.
@@ -15,4 +15,4 @@ Game cờ vua online đơn giản chạy trực tiếp bằng **GitHub Pages**.
 ## 📂 Cài đặt & Chạy
 1. Clone repo:
    ```bash
-   git clone https://github.com/<username>/<repo>.git
+   git clone (https://github.com/OhNoMyKing-Code/mygame)
